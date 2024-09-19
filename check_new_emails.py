@@ -1,7 +1,12 @@
 import win32com.client
+import pythoncom
 from pathlib import Path
 import re
-import pythoncom  # Needed for COM event handling
+
+print(pythoncom.__file__)
+
+
+# This is working but only for the default email account outlook
 
 class NewMailHandler:
     def OnItemAdd(self, item):
@@ -25,34 +30,35 @@ class NewMailHandler:
             print(f"Error processing new email: {e}")
 
 # Set up the output folder for PDFs
-# re_dir = Path.cwd() / "re_"  (project folder)
-
-# save in the PC
-# desktop = Path.home() / "Desktop"
-# re_dir = desktop / "re_"
-re_dir = Path(r"C:\Users\Teilnehmer\OneDrive - BBQ - Baumann Bildung und Qualifizierung GmbH\Desktop\re_")
+re_dir = Path(r"C:\Users\MaxEDV\Desktop\re_")
 re_dir.mkdir(parents=True, exist_ok=True)
 
-
-
 # Connect to Outlook and get the Inbox folder
-outlook = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
-inbox = outlook.GetDefaultFolder(6)  # olFolderInbox
-
-# Debugging: Check connection to Outlook
-print("Connected to Outlook Inbox.")
+try:
+    outlook = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+    inbox = outlook.GetDefaultFolder(6)  # olFolderInbox
+    print("Connected to Outlook Inbox.")
+except Exception as e:
+    print(f"Error connecting to Outlook: {e}")
+    exit()
 
 # Set up the event handler for the Inbox
-items = inbox.Items
-
-# Debugging: Ensure event handler is set
-print("Setting up event handler...")
-
-event_handler = win32com.client.WithEvents(items, NewMailHandler)
-
-print("Monitoring for new emails...")
+try:
+    items = inbox.Items
+    print("Setting up event handler...")
+    event_handler = win32com.client.WithEvents(items, NewMailHandler)
+    print("Monitoring for new emails...")
+except Exception as e:
+    print(f"Error setting up event handler: {e}")
+    exit()
 
 # Keep the script running to listen for events
 while True:
-    # Process waiting COM messages
-    pythoncom.PumpWaitingMessages()
+    try:
+        # Process waiting COM messages
+        pythoncom.PumpWaitingMessages()
+    except KeyboardInterrupt:
+        print("Script interrupted by user.")
+        break
+    except Exception as e:
+        print(f"Error in message processing loop: {e}")
