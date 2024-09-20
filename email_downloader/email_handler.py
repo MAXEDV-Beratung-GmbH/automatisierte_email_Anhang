@@ -1,8 +1,10 @@
+# email_handler.py
 import imaplib
 import email
 from email.header import decode_header
-import re
-from file_handler import save_email_info, sanitize_filename
+from file_handler import save_email_info, save_email_info_to_excel, sanitize_filename
+import os
+import datetime
 
 
 # Function to connect to the IMAP server
@@ -16,9 +18,18 @@ def connect_imap(server, email_user, email_pass):
         print(f"Error connecting: {e}")
         return None
 
+# Function to extract the email address from the "From" field
+def extract_email(from_field):
+    import re
+    match = re.search(r'<(.+?)>', from_field)
+    return match.group(1) if match else from_field
+
 # Function to download all attachments from unread emails
 def check_inbox(mail, re_dir, json_file):
     try:
+        # Define the Excel file once, not inside the loop
+        excel_file = re_dir / "email_info.xlsx"
+
         mail.select("inbox")
         status, messages = mail.search(None, '(UNSEEN)')
         mail_ids = messages[0].split()
@@ -34,33 +45,34 @@ def check_inbox(mail, re_dir, json_file):
                             subject = subject.decode(encoding if encoding else "utf-8")
 
                         date = msg.get("Date")
-                        sender, encoding = decode_header(msg["From"])[0]
-                        if isinstance(sender, bytes):
-                            sender = sender.decode(encoding if encoding else "utf-8")
+                        sender = extract_email(msg.get("From"))
 
                         print(f"Processing email: {subject}")
 
                         email_data = {
-                            "date": date,
-                            "sender": sender,
-                            "subject": subject
+                            "Date": date,
+                            "Email": sender,
+                            "Subject": subject
                         }
-                        save_email_info(email_data, json_file)
 
+                        # Save email information to JSON
+                        save_email_info(email_data, json_file)
+                        # Save email information to the same Excel file
+                        save_email_info_to_excel(email_data, excel_file)
+
+                        # Handle attachments
                         if msg.is_multipart():
-                            print("Email is multipart, checking attachments...")
                             for part in msg.walk():
-                                content_disposition = str(part.get("Content-Disposition"))
-                                if "attachment" in content_disposition:
-                                    filename = part.get_filename()
-                                    if filename:
-                                        filename = sanitize_filename(filename)
-                                        filepath = re_dir / filename
-                                        with open(filepath, "wb") as f:
-                                            f.write(part.get_payload(decode=True))
-                                        print(f"Attachment saved: {filename}")
-                                    else:
-                                        print("Attachment filename is empty.")
+                                filename = part.get_filename()
+                                if filename:
+                                    filename = sanitize_filename(filename)
+                                    filepath = re_dir / filename
+                                    # Save the attachment regardless of disposition
+                                    with open(filepath, "wb") as f:
+                                        f.write(part.get_payload(decode=True))
+                                    print(f"Downloaded attachment: {filename}")
+                        else:
+                            print("No attachments found.")
         else:
             print("No new emails.")
     

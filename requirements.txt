@@ -1,1 +1,3 @@
 pywin32==306
+pandas
+openpyxl
