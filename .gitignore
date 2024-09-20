@@ -10,3 +10,21 @@ Output/
 testing.py
 
 email_info.json
+
+build/
+
+dist/
+
+*.spec
+
+.DS_Store
+
+.vscode/
+
+data/  
+
+__pycache__/
+
+testing.py
+
+email_info.json
