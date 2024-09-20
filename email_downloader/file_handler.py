@@ -1,5 +1,3 @@
-# file_handler.py
-
 import os
 import re
 import json
