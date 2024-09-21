@@ -60,6 +60,15 @@ def save_email_info(email_data, json_file):
     except Exception as e:
         print(f"Error saving email info: {e}")
 
+# Function to check for new PDF files in the selected directory
+def check_new_files(directory):
+    try:
+        existing_files = set(os.listdir(directory))
+        return existing_files
+    except Exception as e:
+        print(f"Error checking files: {e}")
+        return set()
+
 # Create data directory if it doesn't exist
 data_dir = Path("data")
 data_dir.mkdir(exist_ok=True)

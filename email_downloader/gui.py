@@ -1,11 +1,9 @@
-# gui.py
-
+import json
 import tkinter as tk
 from tkinter import filedialog, ttk
 from pathlib import Path
 from config import EMAIL_PROVIDERS
 from email_handler import connect_imap, check_inbox
-from file_handler import save_email_info
 import threading
 import time
 
@@ -17,7 +15,20 @@ def select_folder():
     if not folder_selected:
         print("No folder selected. Exiting.")
         exit()
+
     return Path(folder_selected)
+
+# Function to save user info (folder, email, and provider) to a JSON file
+def save_user_info(folder_selected, email, provider):
+    user_info = {
+        "folder_selected": str(folder_selected),  # Ensure folder path is stored as a string
+        "email": email,
+        "provider": provider
+    }
+
+    # Save the user info to a JSON file
+    with open("user_info.json", "w") as f:
+        json.dump(user_info, f, indent=4)
 
 # Function to start checking inbox in a separate thread
 def start_checking_inbox(mail, re_dir, json_file):
@@ -64,6 +75,9 @@ def start_app():
         if mail:
             re_dir = select_folder()
 
+            # Save the user info (folder, email, provider) to JSON
+            save_user_info(re_dir, email_user, provider)
+
             # Open a new window to display success message
             success_window = tk.Toplevel(root)
             success_window.title("Connection Successful")
@@ -74,8 +88,14 @@ def start_app():
             y = root.winfo_y() + (root.winfo_height() // 2) - 50   # 50 is half of the success window height
             success_window.geometry(f"+{x}+{y}")
 
-            success_label = tk.Label(success_window, text=f"Connection established successfully.\nEmail: {email_user}")
-            success_label.pack(pady=20)
+            # Labels for email, provider, and selected folder
+            email_label = tk.Label(success_window, text=f"Connection established successfully.\nEmail: {email_user}")
+            provider_label = tk.Label(success_window, text=f"Email provider: {provider}")
+     
+
+            # Pack the labels (one below the other)
+            email_label.pack(pady=5)
+            provider_label.pack(pady=5)
 
             # Start checking inbox in a new thread
             threading.Thread(target=start_checking_inbox, args=(mail, re_dir, Path("data/email_info.json")), daemon=True).start()
