@@ -6,12 +6,21 @@ from pathlib import Path
 
 # Function to clean filenames by removing unsafe characters
 def sanitize_filename(filename):
-    return re.sub(r'[^0-9a-zA-Z\.]+', '', filename)
+    # Allow letters, numbers, periods, underscores, and dashes
+    sanitized = re.sub(r'[^0-9a-zA-Z._-]+', '', filename)
+
+    # Check if the filename indicates it's a PDF
+    if filename.lower().endswith('.pdf'):
+        # Ensure it has a .pdf extension
+        if not sanitized.lower().endswith('.pdf'):
+            sanitized += '.pdf'  # Add .pdf if it doesn't have the extension
+
+    return sanitized
 
 # Function to save email information to Excel without duplicating columns
 def save_email_info_to_excel(email_data, excel_file):
     # Define the fixed columns
-    columns = ["Date", "Email", "Subject"]
+    columns = ["Date", "Email", "Subject", "Attachments"]
 
     # Check if the Excel file already exists
     if os.path.exists(excel_file):
@@ -73,16 +82,10 @@ def check_new_files(directory):
 data_dir = Path("data")
 data_dir.mkdir(exist_ok=True)
 
-# Example usage
-email_data = {
-    "Date": "2024-09-19",
-    "Email": "paniagua.ian.de@gmail.com", 
-    "Subject": "Invoice Details"
-}
+
 
 # Set the path for the Excel file in the data directory
 excel_file = data_dir / "email_info.xlsx"
 json_file = data_dir / "email_info.json"
 
-save_email_info_to_excel(email_data, excel_file)
-save_email_info(email_data, json_file)
+
