@@ -1,1 +1,3 @@
 []for now the excel works if it is not open of other users.
+
+[] shell:startup. Can be paste into "Run (win + R)"
