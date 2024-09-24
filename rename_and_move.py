@@ -4,6 +4,7 @@ import os
 import json
 import shutil
 from pathlib import Path
+import pandas as pd
 
 def sanitize_filename_for_windows(filename):
     sanitized = re.sub(r'[<>:"/\\|?*]', '_', filename)
@@ -98,6 +99,23 @@ def rename_and_move_files(invoices, folder_selected):
                 shutil.move(new_path, destination_path)  # Move the renamed file to the new folder
             except Exception as e:
                 print(f"Error processing {file_path}: {e}")  # Handle any errors
+
+def update_excel_file(folder_selected, moved_files_info):
+    excel_path = os.path.join(folder_selected, 'email_info.xlsx')
+
+    # Check if the Excel file exists
+    if os.path.exists(excel_path):
+        df = pd.read_excel(excel_path)
+    else:
+        # Create a new DataFrame if the file doesn't exist
+        df = pd.DataFrame(columns=['filename', 'location', 'status'])
+
+    # Append the moved files info to the DataFrame
+    for info in moved_files_info:
+        df = df.append(info, ignore_index=True)
+
+    # Write the updated DataFrame back to Excel
+    df.to_excel(excel_path, index=False)
 
 def load_folder_info(json_path):
     try:
