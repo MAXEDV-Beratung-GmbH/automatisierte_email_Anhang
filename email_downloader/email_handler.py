@@ -41,6 +41,7 @@ def check_inbox(mail, re_dir, json_file):
 
         if mail_ids:
             email_dates = []  # List to store the dates of processed emails
+            downloaded_files = []  # List to keep track of downloaded attachments
 
             for mail_id in mail_ids:
                 status, msg_data = mail.fetch(mail_id, "(RFC822)")
@@ -77,6 +78,7 @@ def check_inbox(mail, re_dir, json_file):
                                         f.write(part.get_payload(decode=True))
                                     print(f"Downloaded attachment: {filename}")
                                     email_data["Attachments"].append(filename)  # Add the filename to the list
+                                    downloaded_files.append(filepath)  # Track the downloaded file
 
                         # Save email information to JSON and Excel after handling attachments
                         save_email_info(email_data, json_file)
@@ -90,6 +92,15 @@ def check_inbox(mail, re_dir, json_file):
                 last_email_date = email_dates[-1]  # Get the date of the last processed email
                 merged_filename = f"{last_email_date}_merged.pdf"  # Create the combined filename
                 merge_pdfs(re_dir, merged_filename)  # Specify the output filename for the merged PDF
+
+                # Delete the downloaded files after merging
+                for file in downloaded_files:
+                    try:
+                        os.remove(file)
+                        print(f"Deleted file: {file}")
+                    except Exception as e:
+                        print(f"Error deleting file {file}: {e}")
+
             else:
                 print("No emails with attachments were processed.")
         else:
