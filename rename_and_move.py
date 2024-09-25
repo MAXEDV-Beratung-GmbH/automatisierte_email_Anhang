@@ -11,6 +11,7 @@ def sanitize_filename_for_windows(filename):
     return sanitized
 
 def extract_text_from_pdf(pdf_file_path):
+    # Extract text from the entire PDF file
     text = ''
     if not os.path.isfile(pdf_file_path):
         print(f"File does not exist: {pdf_file_path}")
@@ -21,28 +22,35 @@ def extract_text_from_pdf(pdf_file_path):
             for page in pdf.pages:
                 page_text = page.extract_text()
                 if page_text:
-                    text += page_text
+                    text += page_text + "\n"  # Ensure we separate pages with a newline
+        print("Full extracted text from PDF:")
+        print(text)
     except Exception as e:
         print(f"Error reading {pdf_file_path}: {e}")
     
     return text
 
 def extract_invoice_number(text):
+    # Define patterns to search for invoice numbers
     patterns = [
-        r'Rechnungsnr\.\s*:\s*(RE\d+)', 
+        r'Rechnungsnr\.?\s*:\s*([\w\d-]+)', 
         r'Rechnung\s+(\d{4}/\d{4})', 
         r'(?:Rechnung\s*Nr\.?|Rechnungs-Nr\.?|Rechnungsnummer)[\s:]*[-\s]*([\w\d-]+)',  
+        r'[\D]*(\d{8,})[\D]*Rechnungsnummer',  
         r'(\d{8,})\s*[\s\S]*?Rechnungsnummer\s*[:\s]*',  
-        r'(\d{8,})\s*Rechnungsnummer\s*[:\s]*',  
-        r'(\d{8,})\s*[\s\S]*?Rechnungsnummer'
+        r'(\d{8,})\s*Rechnungsnummer\s*[:\s]*'
     ]
     
+    
+    # Search through the text for any of the defined patterns
     for pattern in patterns:
         match = re.search(pattern, text, re.MULTILINE | re.DOTALL)
         if match:
-            return match.group(1).strip()
+            print(f"Found invoice number: {match.group(1).strip()}")  # Debugging output for found invoice number
+            return match.group(1).strip()  # Return the first matched invoice number
     
-    return None
+    print("No invoice number found.")  # Debugging output when no invoice number is found
+    return None  # Return None if no invoice number is found
 
 def get_files_in_folder(folder_path):
     files = []

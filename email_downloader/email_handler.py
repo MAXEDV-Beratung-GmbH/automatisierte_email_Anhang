@@ -2,9 +2,9 @@ import imaplib
 import email
 from email.header import decode_header
 from file_handler import save_email_info, save_email_info_to_excel, sanitize_filename, check_new_files
+from pdf_handler import merge_pdfs  # Ensure pdf_handler.py is in the same directory
 import os
-import datetime
-
+from datetime import datetime  # Import for handling dates
 
 # Function to connect to the IMAP server
 def connect_imap(server, email_user, email_pass):
@@ -24,11 +24,11 @@ def extract_email(from_field):
     return match.group(1) if match else from_field
 
 # Function to download all attachments from unread emails
-
 def check_inbox(mail, re_dir, json_file):
     try:
         excel_file = re_dir / "email_info.xlsx"
 
+        # Check for new files in the directory
         new_files = check_new_files(re_dir)
         if new_files:
             print("New files detected: ", ', '.join(new_files))
@@ -40,6 +40,8 @@ def check_inbox(mail, re_dir, json_file):
         mail_ids = messages[0].split()
 
         if mail_ids:
+            email_dates = []  # List to store the dates of processed emails
+
             for mail_id in mail_ids:
                 status, msg_data = mail.fetch(mail_id, "(RFC822)")
                 for response_part in msg_data:
@@ -51,6 +53,10 @@ def check_inbox(mail, re_dir, json_file):
 
                         date = msg.get("Date")
                         sender = extract_email(msg.get("From"))
+
+                        # Parse the date and format it
+                        email_date = datetime.strptime(date, '%a, %d %b %Y %H:%M:%S %z')
+                        formatted_date = email_date.strftime('%Y-%m-%d')  # Format: YYYY-MM-DD
 
                         print(f"Processing email: {subject}")
 
@@ -70,11 +76,22 @@ def check_inbox(mail, re_dir, json_file):
                                     with open(filepath, "wb") as f:
                                         f.write(part.get_payload(decode=True))
                                     print(f"Downloaded attachment: {filename}")
-                                    email_data["Attachments"].append(filename)
+                                    email_data["Attachments"].append(filename)  # Add the filename to the list
 
                         # Save email information to JSON and Excel after handling attachments
                         save_email_info(email_data, json_file)
                         save_email_info_to_excel(email_data, excel_file)
+
+                        # Add the formatted date to the list
+                        email_dates.append(formatted_date)
+
+            # After processing all emails, merge the downloaded PDFs
+            if email_dates:
+                last_email_date = email_dates[-1]  # Get the date of the last processed email
+                merged_filename = f"{last_email_date}_merged.pdf"  # Create the combined filename
+                merge_pdfs(re_dir, merged_filename)  # Specify the output filename for the merged PDF
+            else:
+                print("No emails with attachments were processed.")
         else:
             print("No new emails.")
 
