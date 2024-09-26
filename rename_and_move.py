@@ -11,7 +11,6 @@ def sanitize_filename_for_windows(filename):
     return sanitized
 
 def extract_text_from_pdf(pdf_file_path):
-    # Extract text from the entire PDF file
     text = ''
     if not os.path.isfile(pdf_file_path):
         print(f"File does not exist: {pdf_file_path}")
@@ -31,7 +30,6 @@ def extract_text_from_pdf(pdf_file_path):
     return text
 
 def extract_invoice_number(text):
-    # Define patterns to search for invoice numbers
     patterns = [
         r'Rechnungsnr\.?\s*:\s*([\w\d-]+)', 
         r'Rechnung\s+(\d{4}/\d{4})', 
@@ -41,8 +39,6 @@ def extract_invoice_number(text):
         r'(\d{8,})\s*Rechnungsnummer\s*[:\s]*'
     ]
     
-    
-    # Search through the text for any of the defined patterns
     for pattern in patterns:
         match = re.search(pattern, text, re.MULTILINE | re.DOTALL)
         if match:
@@ -50,7 +46,7 @@ def extract_invoice_number(text):
             return match.group(1).strip()  # Return the first matched invoice number
     
     print("No invoice number found.")  # Debugging output when no invoice number is found
-    return None  # Return None if no invoice number is found
+    return None
 
 def get_files_in_folder(folder_path):
     files = []
@@ -84,16 +80,16 @@ def display_invoices(invoices, filename_width=20):
         print(f"{filename_base:<{filename_width}} {invoice_number:<25}")
 
 def rename_and_move_files(invoices, folder_selected):
-    # Create the Re_Erledigt folder in the same location as folder_selected
     re_erledigt_path = folder_selected.replace('re_', 'Re_Erledigt')
 
-    # Create the Re_Erledigt folder if it doesn't exist
     if not os.path.exists(re_erledigt_path):
         os.makedirs(re_erledigt_path)
         print(f"Created folder: {re_erledigt_path}")
 
+    moved_files_info = []  # Store information about moved files
+
     for file_path, invoice_number in invoices:
-        if invoice_number != 'No invoice number found':
+        if invoice_number and invoice_number != 'No invoice number found':
             original_name = os.path.basename(file_path)
             new_invoice_number = invoice_number.replace('/', '-')  # Replace '/' with '-'
             new_name = f"{new_invoice_number}_{sanitize_filename_for_windows(original_name)}"
@@ -105,22 +101,27 @@ def rename_and_move_files(invoices, folder_selected):
 
                 print(f"Moving {new_name} to {destination_path}")  # Print the destination path
                 shutil.move(new_path, destination_path)  # Move the renamed file to the new folder
+                
+                # Append information about the moved file
+                moved_files_info.append({'filename': new_name, 'location': re_erledigt_path, 'status': 'moved'})
             except Exception as e:
                 print(f"Error processing {file_path}: {e}")  # Handle any errors
+
+    return moved_files_info
 
 def update_excel_file(folder_selected, moved_files_info):
     excel_path = os.path.join(folder_selected, 'email_info.xlsx')
 
-    # Check if the Excel file exists
     if os.path.exists(excel_path):
         df = pd.read_excel(excel_path)
     else:
-        # Create a new DataFrame if the file doesn't exist
         df = pd.DataFrame(columns=['filename', 'location', 'status'])
 
-    # Append the moved files info to the DataFrame
-    for info in moved_files_info:
-        df = df.append(info, ignore_index=True)
+    # Create a new DataFrame from the moved files info
+    moved_df = pd.DataFrame(moved_files_info)
+
+    # Concatenate the old and new DataFrames
+    df = pd.concat([df, moved_df], ignore_index=True)
 
     # Write the updated DataFrame back to Excel
     df.to_excel(excel_path, index=False)
@@ -147,7 +148,8 @@ if __name__ == "__main__":
             print(f"Processing files in the folder: {folder_path}")
             invoices = extract_invoices_from_folder(folder_path)
             display_invoices(invoices)
-            rename_and_move_files(invoices, str(folder_path))  # Pass folder_path as an argument
+            moved_files_info = rename_and_move_files(invoices, str(folder_path))  # Get info of moved files
+            update_excel_file(str(folder_path), moved_files_info)  # Update Excel file with moved files info
         else:
             print(f"The folder does not exist or is not a directory: {folder_path}")
     else:
