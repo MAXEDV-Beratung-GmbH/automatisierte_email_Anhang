@@ -35,11 +35,17 @@ def save_email_info_to_excel(email_data, excel_file):
         # Create a new DataFrame with the predefined columns
         df = pd.DataFrame(columns=columns)
 
-    # Convert the new email_data into a DataFrame
-    new_data = pd.DataFrame([email_data])
-
-    # Concatenate the old and new data
-    df = pd.concat([df, new_data], ignore_index=True)
+    # Update or add new entry
+    existing_entry = df[(df['Date'] == email_data['Date']) & (df['Email'] == email_data['Email'])]
+    if not existing_entry.empty:
+        # If the entry exists, update it
+        idx = existing_entry.index[0]
+        df.at[idx, 'Attachments'] = email_data['Attachments']  # Update attachments
+    else:
+        # Convert the new email_data into a DataFrame
+        new_data = pd.DataFrame([email_data])
+        # Concatenate the old and new data
+        df = pd.concat([df, new_data], ignore_index=True)
 
     # Ensure only the fixed columns are saved
     df = df[columns]
@@ -60,8 +66,14 @@ def save_email_info(email_data, json_file):
         else:
             data = []
 
-        # Append the new data
-        data.append(email_data)
+        # Update or add new entry
+        for index, entry in enumerate(data):
+            if entry['Date'] == email_data['Date'] and entry['Email'] == email_data['Email']:
+                data[index]['Attachments'] = email_data['Attachments']  # Update attachments
+                break
+        else:
+            # If no existing entry found, append the new data
+            data.append(email_data)
 
         # Save to the JSON file
         with open(json_file, "w") as f:
@@ -82,10 +94,6 @@ def check_new_files(directory):
 data_dir = Path("data")
 data_dir.mkdir(exist_ok=True)
 
-
-
 # Set the path for the Excel file in the data directory
 excel_file = data_dir / "email_info.xlsx"
 json_file = data_dir / "email_info.json"
-
-

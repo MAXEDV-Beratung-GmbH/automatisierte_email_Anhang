@@ -88,10 +88,19 @@ def check_inbox(mail, re_dir, json_file):
                         email_dates.append(formatted_date)
 
             # After processing all emails, merge the downloaded PDFs
-            if email_dates:
+            if email_dates and downloaded_files:
                 last_email_date = email_dates[-1]  # Get the date of the last processed email
                 merged_filename = f"{last_email_date}_merged.pdf"  # Create the combined filename
+                merged_filepath = re_dir / merged_filename  # Full path for the merged PDF
+                
                 merge_pdfs(re_dir, merged_filename)  # Specify the output filename for the merged PDF
+
+                # Replace attachments with the merged PDF
+                email_data["Attachments"] = [merged_filename]  # Update to only include the merged PDF
+
+                # Save updated email information with the merged PDF to JSON and Excel
+                save_email_info(email_data, json_file)
+                save_email_info_to_excel(email_data, excel_file)
 
                 # Delete the downloaded files after merging
                 for file in downloaded_files:
