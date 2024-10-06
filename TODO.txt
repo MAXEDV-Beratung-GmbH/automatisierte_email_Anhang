@@ -8,7 +8,7 @@
 
 
 [x] Create a new column for the mergered pdf and incluide it in the json aswell.
-[] add the rename and remove function to the main
+[x] add the rename and remove function to the main
 
 
 
