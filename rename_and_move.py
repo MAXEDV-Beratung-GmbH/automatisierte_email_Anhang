@@ -21,7 +21,7 @@ def extract_text_from_pdf(pdf_file_path):
             for page in pdf.pages:
                 page_text = page.extract_text()
                 if page_text:
-                    text += page_text + "\n"  # Ensure we separate pages with a newline
+                    text += page_text + "\n"  
         print("Full extracted text from PDF:")
         print(text)
     except Exception as e:
