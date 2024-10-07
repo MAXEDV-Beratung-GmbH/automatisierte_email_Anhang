@@ -4,6 +4,9 @@ import os
 import time
 from pathlib import Path
 
+# Set to store processed files and avoid reprocessing
+processed_files = set()
+
 # Function to merge PDF attachments and delete original PDFs
 def merge_email_attachments(pdf_files, output_filename):
     merger = PyPDF2.PdfMerger()
@@ -15,8 +18,13 @@ def merge_email_attachments(pdf_files, output_filename):
             pdf_file_str = str(pdf_file) if isinstance(pdf_file, Path) else pdf_file
             
             if pdf_file_str.endswith('.pdf'):
-                merger.append(pdf_file_str)
-                logging.info(f"Added {pdf_file_str} to the merger.")
+                # Check if the file has already been processed
+                if pdf_file_str not in processed_files:
+                    merger.append(pdf_file_str)
+                    logging.info(f"Added {pdf_file_str} to the merger.")
+                    processed_files.add(pdf_file_str)  # Add to processed files
+                else:
+                    logging.info(f"File {pdf_file_str} already processed, skipping.")
         
         if pdf_files:
             merged_file_path = os.path.join(os.path.dirname(str(pdf_files[0])), output_filename)

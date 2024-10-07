@@ -44,7 +44,7 @@ def sanitize_filename_for_windows(filename):
 # Function to extract text from a PDF file
 def extract_text_from_pdf(pdf_file_path):
     text = ''
-    if not pdf_file_path.endswith('.pdf'):
+    if not pdf_file_path.lower().endswith('.pdf'):
         logging.info(f"Skipping non-PDF file: {pdf_file_path}")
         return text
 
