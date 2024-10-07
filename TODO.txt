@@ -12,9 +12,9 @@
 
 
 
-
+OCR
 [] png, jpe, and other formats incluide in the merged pdf (now is only merging the PDFs files)
 
+[] Excel in the Re_erledigt folder with all the mergered pdf
+[] Add a shorcut to run it permanetly in windows. shell:startup. Can be paste into "Run (win + R)"
 
-[] Add a shorcut to run it permanetly in windows. 
-[] Excel in the Re_erledigt folder with all the mergered pdf with the
