@@ -2,7 +2,7 @@ import imaplib
 import email
 from email.header import decode_header
 from file_handler import save_email_info, save_email_info_to_excel, sanitize_filename, check_new_files
-from pdf_handler import merge_pdfs
+from pdf_handler import merge_email_attachments
 import os
 from datetime import datetime
 import pdfplumber
@@ -210,7 +210,7 @@ def check_inbox(mail, re_dir, json_file):
                             "Subject": subject,
                             "Attachments": []
                         }
-
+                        pdf_attachments = []
                         if msg.is_multipart():
                             for part in msg.walk():
                                 filename = part.get_filename()
@@ -222,7 +222,15 @@ def check_inbox(mail, re_dir, json_file):
                                     logging.info(f"Downloaded attachment: {filename}")
                                     email_data["Attachments"].append(filename)
                                     downloaded_files.append(filepath)
-
+                                    pdf_attachments.append(filepath)
+                        # Merge the PDFs if there are more than one
+                        if len(pdf_attachments) > 1:
+                            output_filename = f"merged_{formatted_date}_{sanitize_filename_for_windows(subject)}.pdf"
+                            merged_file_path = merge_email_attachments(pdf_attachments, output_filename)
+                            if merged_file_path:
+                                downloaded_files.append(merged_file_path)
+                        else:
+                            downloaded_files.extend(pdf_attachments)
                         save_email_info(email_data, json_file)
                         save_email_info_to_excel(email_data, excel_file)
 
@@ -244,9 +252,6 @@ def check_inbox(mail, re_dir, json_file):
 
     except Exception as e:
         logging.error(f"Error checking inbox: {e}")
-
-
-
 
 
 
