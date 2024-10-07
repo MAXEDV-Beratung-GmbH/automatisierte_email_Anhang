@@ -3,6 +3,7 @@ import email
 from email.header import decode_header
 from file_handler import save_email_info, save_email_info_to_excel, sanitize_filename, check_new_files
 from pdf_handler import merge_email_attachments
+from ocr_api import OCRConnection
 import os
 from datetime import datetime
 import pdfplumber
@@ -17,6 +18,8 @@ import json
 # Basic logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+# Initialize OCR connection
+ocr_connection = OCRConnection() 
 
 # Function to connect to the IMAP server
 def connect_imap(server, email_user, email_pass):

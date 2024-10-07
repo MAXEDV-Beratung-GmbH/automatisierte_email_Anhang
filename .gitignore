@@ -32,3 +32,5 @@ email_info.json
 user_info.json
 
 email.txt
+
+.env
