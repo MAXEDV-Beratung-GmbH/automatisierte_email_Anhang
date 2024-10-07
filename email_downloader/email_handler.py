@@ -12,11 +12,11 @@ import pandas as pd
 import shutil
 import logging
 
-# Configuración básica del logging
+# Basic logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-# Función para conectarse al servidor IMAP
+# Function to connect to the IMAP server
 def connect_imap(server, email_user, email_pass):
     try:
         mail = imaplib.IMAP4_SSL(server, port=993)
@@ -28,18 +28,18 @@ def connect_imap(server, email_user, email_pass):
         return None
 
 
-# Función para extraer la dirección de correo del campo "From"
+# Function to extract the email address from the "From" field
 def extract_email(from_field):
     match = re.search(r'<(.+?)>', from_field)
     return match.group(1) if match else from_field
 
 
-# Función para sanitizar los nombres de archivos en Windows
+# Function to sanitize file names on Windows
 def sanitize_filename_for_windows(filename):
     return re.sub(r'[<>:"/\\|?*]', '_', filename)
 
 
-# Función para extraer texto de un archivo PDF
+# Function to extract text from a PDF file
 def extract_text_from_pdf(pdf_file_path):
     text = ''
     if not pdf_file_path.endswith('.pdf'):
@@ -63,7 +63,7 @@ def extract_text_from_pdf(pdf_file_path):
     return text
 
 
-# Función para extraer el número de factura de un texto
+# Function to extract the invoice number from the text
 def extract_invoice_number(text):
     patterns = [
         r'Rechnungsnr\.?\s*:\s*([\w\d-]+)',
@@ -84,15 +84,14 @@ def extract_invoice_number(text):
     return None
 
 
-# Función para revisar la bandeja de entrada y descargar archivos adjuntos
-# Función para revisar la bandeja de entrada y descargar archivos adjuntos
+# Function to check the inbox and download attachments
 def check_inbox(mail, re_dir, json_file):
     try:
         excel_file = re_dir / "email_info.xlsx"
 
-        # Verificar si hay nuevos archivos en el directorio
+        # Check if there are new files in the directory
         new_files = check_new_files(re_dir)
-        invoices = []  # Lista para almacenar facturas procesadas
+        invoices = []  # List to store processed invoices
 
         if new_files:
             logging.info(f"New files detected: {', '.join(map(str, new_files))}")
@@ -100,23 +99,23 @@ def check_inbox(mail, re_dir, json_file):
                 sanitized_filename = sanitize_filename(file)
                 pdf_file_path = re_dir / sanitized_filename
 
-                # Extraer texto del PDF
+                # Extract text from the PDF
                 extracted_text = extract_text_from_pdf(str(pdf_file_path))
                 invoice_number = extract_invoice_number(extracted_text)
 
                 if invoice_number:
                     logging.info(f"Renaming and moving the file for invoice number: {invoice_number}")
                     
-                    # Renombrar y mover el archivo inmediatamente después de encontrar la factura
+                    # Rename and move the file immediately after finding the invoice
                     moved_file = rename_and_move_single_file(sanitized_filename, invoice_number, re_dir, json_file)
                     
-                    # Si el archivo fue renombrado y movido correctamente, lo agregamos a la lista de facturas
+                    # If the file was renamed and moved successfully, add it to the invoice list
                     if moved_file:
                         invoices.append(moved_file)
         else:
             logging.info("No new files found.")
 
-        # Leer correos electrónicos no leídos
+        # Read unread emails
         mail.select("inbox")
         status, messages = mail.search(None, '(UNSEEN)')
         mail_ids = messages[0].split()
@@ -171,13 +170,14 @@ def check_inbox(mail, re_dir, json_file):
     except Exception as e:
         logging.error(f"Error checking inbox: {e}")
 
-# Función para renombrar y mover archivos
+
+# Function to rename and move files
 def rename_and_move_files(invoices, re_dir, config):
-    # Extraer el folder_selected desde la configuración
-    folder_selected = config.get('folder_selected', str(re_dir))  # Si no se proporciona, usa re_dir por defecto
+    # Extract folder_selected from the configuration
+    folder_selected = config.get('folder_selected', str(re_dir))  # If not provided, use re_dir by default
     re_erledigt_path = Path(folder_selected) / "Re_Erledigt"
 
-    # Crear el directorio si no existe
+    # Create the directory if it doesn't exist
     if not re_erledigt_path.exists():
         re_erledigt_path.mkdir(parents=True)
         logging.info(f"Created folder: {re_erledigt_path}")
@@ -196,11 +196,11 @@ def rename_and_move_files(invoices, re_dir, config):
             new_path = re_dir / new_name
 
             try:
-                # Renombrar el archivo
+                # Rename the file
                 logging.info(f"Renaming file {file_path} to {new_path}")
                 file_path.rename(new_path)
 
-                # Mover el archivo renombrado a la carpeta Re_Erledigt en la ruta seleccionada
+                # Move the renamed file to the Re_Erledigt folder in the selected path
                 destination_path = re_erledigt_path / new_name
                 logging.info(f"Moving file {new_name} to {destination_path}")
                 shutil.move(new_path, destination_path)
@@ -211,17 +211,18 @@ def rename_and_move_files(invoices, re_dir, config):
 
     return moved_files_info
 
-# Llamar las funciones necesarias para procesar bandeja de entrada y mover archivos
+
+# Call the necessary functions to process the inbox and move files
 def main(server, email_user, email_pass, re_dir, json_file):
     mail = connect_imap(server, email_user, email_pass)
     
-    # Cargar la configuración desde el archivo JSON
+    # Load the configuration from the JSON file
     with open(json_file, 'r') as f:
         config = json.load(f)
 
     if mail:
         invoices, email_dates, downloaded_files = check_inbox(mail, re_dir, json_file)
         if invoices:
-            rename_and_move_files(invoices, re_dir, config)  # Pasar la configuración
+            rename_and_move_files(invoices, re_dir, config)  # Pass the configuration
         else:
             logging.info("No invoices to process.")
