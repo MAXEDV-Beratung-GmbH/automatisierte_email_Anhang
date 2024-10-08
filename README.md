@@ -16,10 +16,10 @@ This repository is designed to detect new emails and download their attachments,
 python -m venv venv
 ```
 
---** Activate the virtual environment:**
+--** Activate the virtual environment: (bash)**
 
 ```bash
-.\venv\Scripts\activate
+source\venv\Scripts\activate
 ```
 
 --** Install the required packages:**
@@ -29,8 +29,11 @@ pip install -r requirements.txt
 ```
 
 ## Usage
+--** Run in the terminal**
 
+```bash
 python email_downloader/main.py
+```
 
 ## Contributing
 Pull requests are welcome. 
