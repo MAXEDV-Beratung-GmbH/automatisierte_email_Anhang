@@ -152,31 +152,8 @@ def rename_and_move_files(invoices, re_dir):
 def check_inbox(mail, re_dir, json_file):
     try:
         excel_file = re_dir / "email_info.xlsx"
-
-        # Check if there are new files in the directory
-        new_files = check_new_files(re_dir)
-        print(re_dir)
         invoices = []  # List to store processed invoices
-
-        if new_files:
-            logging.info(f"New files detected: {', '.join(map(str, new_files))}")
-            for file in new_files:
-                sanitized_filename = sanitize_filename(file)
-                pdf_file_path = re_dir / sanitized_filename
-
-                # Extract text from the PDF
-                extracted_text = extract_text_from_pdf(str(pdf_file_path))
-                print(extracted_text)
-                invoice_number = extract_invoice_number(extracted_text)
-                print(invoice_number)
-
-                if invoice_number:
-                    logging.info(f"Renaming and moving the file for invoice number: {invoice_number}")
-                    invoices.append((pdf_file_path, invoice_number))
-                    moved_files_info = rename_and_move_files(invoices, str(re_dir))
-                    print('moved_files_info: ' + str(moved_files_info))
-        else:
-            logging.info("No new files found.")
+        downloaded_files = []  # Store downloaded files
 
         # Read unread emails
         mail.select("inbox")
@@ -184,9 +161,6 @@ def check_inbox(mail, re_dir, json_file):
         mail_ids = messages[0].split()
 
         if mail_ids:
-            email_dates = []
-            downloaded_files = []
-
             for mail_id in mail_ids:
                 status, msg_data = mail.fetch(mail_id, "(RFC822)")
                 for response_part in msg_data:
@@ -198,11 +172,6 @@ def check_inbox(mail, re_dir, json_file):
 
                         date = msg.get("Date")
                         sender = extract_email(msg.get("From"))
-
-                        email_date = datetime.strptime(date, '%a, %d %b %Y %H:%M:%S %z')
-                        formatted_date = email_date.strftime('%Y-%m-%d')
-
-                        logging.info(f"Processing email: {subject}")
 
                         email_data = {
                             "Date": date,
@@ -219,12 +188,13 @@ def check_inbox(mail, re_dir, json_file):
                                     filepath = re_dir / filename
                                     with open(filepath, "wb") as f:
                                         f.write(part.get_payload(decode=True))
-                                    logging.info(f"Downloaded attachment: {filename}")
                                     email_data["Attachments"].append(filename)
                                     downloaded_files.append(filepath)
                                     pdf_attachments.append(filepath)
+
                         # Merge the PDFs if there are more than one
                         if len(pdf_attachments) > 1:
+                            formatted_date = datetime.now().strftime('%Y-%m-%d')  # Use current date for merged file
                             output_filename = f"merged_{formatted_date}_{sanitize_filename_for_windows(subject)}.pdf"
                             merged_file_path = merge_email_attachments(pdf_attachments, output_filename)
                             if merged_file_path:
@@ -234,10 +204,22 @@ def check_inbox(mail, re_dir, json_file):
                         save_email_info(email_data, json_file)
                         save_email_info_to_excel(email_data, excel_file)
 
-                        email_dates.append(formatted_date)
+        # Now check for new files in the directory after processing emails
+        new_files = check_new_files(re_dir)
+        if new_files:
+            logging.info(f"New files detected: {', '.join(map(str, new_files))}")
+            for file in new_files:
+                sanitized_filename = sanitize_filename(file)
+                pdf_file_path = re_dir / sanitized_filename
 
-            return invoices, email_dates, downloaded_files
-        
+                # Extract text from the PDF
+                extracted_text = extract_text_from_pdf(str(pdf_file_path))
+                invoice_number = extract_invoice_number(extracted_text)
+
+                if invoice_number:
+                    logging.info(f"Renaming and moving the file for invoice number: {invoice_number}")
+                    invoices.append((pdf_file_path, invoice_number))
+
         if invoices:
             moved_files_info = rename_and_move_files(invoices, str(re_dir))
             if moved_files_info:
@@ -250,25 +232,12 @@ def check_inbox(mail, re_dir, json_file):
     except Exception as e:
         logging.error(f"Error checking inbox: {e}")
 
-    except Exception as e:
-        logging.error(f"Error checking inbox: {e}")
-
-
-
-# Call the necessary functions to process the inbox and move files
 def main(server, email_user, email_pass, re_dir, json_file):
     mail = connect_imap(server, email_user, email_pass)
 
     if mail:
-        invoices, email_dates, downloaded_files = check_inbox(mail, re_dir, json_file)
+        check_inbox(mail, re_dir, json_file)
+        invoices = extract_invoices_from_folder(re_dir)
+        display_invoices(invoices)
     else:
         logging.error("No connection to the IMAP server.")
-        return
-
-    invoices = extract_invoices_from_folder(re_dir)
-    display_invoices(invoices)
-    if invoices:
-        rename_and_move_files(invoices, re_dir)  # Use folder_selected directly
-    else:
-        logging.info("No invoices to process.")
-
