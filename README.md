@@ -10,26 +10,26 @@ This repository is designed to detect new emails and download their attachments,
 - **Python**: The main programming language used in this project.
 - **Requirements**: All necessary packages are specified in the `requirements.txt` file.
 
-** Create a virtual environment:**
+**Create a virtual environment:**
 
 ```bash
 python -m venv venv
 ```
 
-** Activate the virtual environment: (bash)**
+**Activate the virtual environment: (bash)**
 
 ```bash
 source\venv\Scripts\activate
 ```
 
-** Install the required packages:**
+**Install the required packages:**
 
 ```bash
 pip install -r requirements.txt
 ```
 
 ## Usage
-** Run in the terminal**
+**Run in the terminal**
 
 ```bash
 python email_downloader/main.py
