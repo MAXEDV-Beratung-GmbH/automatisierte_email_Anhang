@@ -91,7 +91,6 @@ def start_app():
             # Labels for email, provider, and selected folder
             email_label = tk.Label(success_window, text=f"Connection established successfully.\nEmail: {email_user}")
             provider_label = tk.Label(success_window, text=f"Email provider: {provider}")
-     
 
             # Pack the labels (one below the other)
             email_label.pack(pady=5)
@@ -106,6 +105,22 @@ def start_app():
     # Submit button
     submit_button = tk.Button(root, text="Start", command=submit)
     submit_button.grid(row=3, columnspan=2, pady=10)
+
+    # Center the main window on the screen
+    root.update_idletasks()  # Update "requested size" of the window
+    window_width = root.winfo_width()
+    window_height = root.winfo_height()
+
+    # Get the screen width and height
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+
+    # Calculate the x and y coordinates for the Tkinter window
+    x = (screen_width // 2) - (window_width // 2)
+    y = (screen_height // 2) - (window_height // 2)
+
+    # Set the dimensions of the window
+    root.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
     root.mainloop()
 
