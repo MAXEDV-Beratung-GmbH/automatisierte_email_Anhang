@@ -20,7 +20,7 @@ def sanitize_filename(filename):
 # Function to save email information to Excel without duplicating columns
 def save_email_info_to_excel(email_data, excel_file):
     # Define the fixed columns
-    columns = ["Date", "Email", "Subject", "Attachments"]
+    columns = ["Date", "Email", "Subject", "Attachments", "Invoice_number"]
 
     # Check if the Excel file already exists
     if os.path.exists(excel_file):
@@ -35,12 +35,17 @@ def save_email_info_to_excel(email_data, excel_file):
         # Create a new DataFrame with the predefined columns
         df = pd.DataFrame(columns=columns)
 
+    # Ensure the 'Invoice_number' column is of string type
+    if 'Invoice_number' in df.columns:
+        df['Invoice_number'] = df['Invoice_number'].astype(str)  # Convert to string for consistency
+    
     # Update or add new entry
     existing_entry = df[(df['Date'] == email_data['Date']) & (df['Email'] == email_data['Email'])]
     if not existing_entry.empty:
         # If the entry exists, update it
         idx = existing_entry.index[0]
         df.at[idx, 'Attachments'] = email_data['Attachments']  # Update attachments
+        df.at[idx, 'Invoice_number'] = email_data['Invoice_number']
     else:
         # Convert the new email_data into a DataFrame
         new_data = pd.DataFrame([email_data])
@@ -70,6 +75,7 @@ def save_email_info(email_data, json_file):
         for index, entry in enumerate(data):
             if entry['Date'] == email_data['Date'] and entry['Email'] == email_data['Email']:
                 data[index]['Attachments'] = email_data['Attachments']  # Update attachments
+                data[index]['Invoice_number'] = email_data['Invoice_number']
                 break
         else:
             # If no existing entry found, append the new data

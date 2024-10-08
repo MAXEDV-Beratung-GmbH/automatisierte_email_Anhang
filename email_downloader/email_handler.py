@@ -177,7 +177,8 @@ def check_inbox(mail, re_dir, json_file):
                             "Date": date,
                             "Email": sender,
                             "Subject": subject,
-                            "Attachments": []
+                            "Attachments": [],
+                            "Invoice_number": ''
                         }
                         pdf_attachments = []
                         if msg.is_multipart():
@@ -219,6 +220,11 @@ def check_inbox(mail, re_dir, json_file):
                 if invoice_number:
                     logging.info(f"Renaming and moving the file for invoice number: {invoice_number}")
                     invoices.append((pdf_file_path, invoice_number))
+
+                    email_data["Invoice_number"] = invoice_number
+                    save_email_info(email_data, json_file)
+                    save_email_info_to_excel(email_data, excel_file)
+
 
         if invoices:
             moved_files_info = rename_and_move_files(invoices, str(re_dir))
