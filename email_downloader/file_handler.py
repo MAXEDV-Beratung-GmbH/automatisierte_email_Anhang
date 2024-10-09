@@ -14,6 +14,10 @@ def sanitize_filename(filename):
         # Ensure it has a .pdf extension
         if not sanitized.lower().endswith('.pdf'):
             sanitized += '.pdf'  # Add .pdf if it doesn't have the extension
+    
+    # Convert '.PDF' to '.pdf' if the filename ends specifically with '.PDF'
+    if sanitized.endswith('.PDF'):
+        sanitized = sanitized[:-4] + '.pdf'
 
     return sanitized
 
